@@ -119,25 +119,18 @@ function bundlePreprocessor(config) {
 
   return async function(content, file, done) {
     const {options, warnings} = await configPromise;
-    const plugins = options[0].plugins || [];
+    const pluginConfig = options[0].plugins || [];
+    const outputConfig = options[0].output || [];
 
     warnings.flush();
 
     const bundle = await rollup.rollup({
       input: fileMap.get(file.path),
-      plugins: [...plugins, multiEntry({exports: false})]
+      plugins: [...pluginConfig, multiEntry({exports: false})]
     });
+    const {output} = await bundle.generate(outputConfig[0]);
 
-    const {output} = await bundle.generate({
-      sourcemap: true,
-      format: 'iife'
-    });
-
-    await bundle.write({
-      file: file.path,
-      sourcemap: true,
-      format: 'iife'
-    });
+    await bundle.write({...outputConfig[0], file: file.path});
 
     done(null, output[0].code);
   };
